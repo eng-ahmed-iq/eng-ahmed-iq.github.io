@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENG AHMED - Software Systems Matrix</title>
+<style>
+    :root {
+        --gold: #c5a880;
+        --gold-glow: rgba(197, 168, 128, 0.15);
+        --bg-dark: #05070a;
+        --card-bg: rgba(21, 25, 34, 0.7);
+        --border-color: #1e2633;
+        --text-gold: #f0e6d2;
+    }
+
+    body { 
+        margin: 0; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background: var(--bg-dark); 
+        color: #ddd; 
+        overflow-x: hidden; 
+        position: relative;
+    }
+
+    /* جزيئات ضوئية متحركة في عمق الخلفية السينمائية */
+    body::before {
+        content: '';
+        position: fixed;
+        top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle at 15% 20%, rgba(35, 50, 80, 0.25) 0%, transparent 45%),
+                    radial-gradient(circle at 85% 75%, rgba(20, 30, 50, 0.25) 0%, transparent 45%);
+        animation: spaceRotate 50s linear infinite;
+        z-index: -2;
+    }
+    @keyframes spaceRotate { 100% { transform: rotate(360deg); } }
+
+    #loader { 
+        position: fixed; inset: 0; background: #030407; 
+        display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; 
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s; 
+    }
+    #loader h2 { color: var(--text-gold); font-weight: 300; margin-bottom: 20px; font-size: 1.8rem; letter-spacing: 1px; }
+    .bar { width: 300px; height: 4px; background: rgba(255,255,255,0.03); border: 1px solid rgba(197, 168, 128, 0.2); border-radius: 2px; overflow: hidden; }
+    .fill { height: 100%; width: 0; background: linear-gradient(90deg, #8a6f48, var(--gold)); box-shadow: 0 0 8px var(--gold); }
+    #pct { color: var(--gold); font-family: monospace; margin-top: 10px; font-weight: bold; }
+
+    header { 
+        text-align: center; 
+        padding: 90px 20px 40px 20px; 
+        border-bottom: 1px solid rgba(197, 168, 128, 0.08);
+        background: linear-gradient(to bottom, rgba(11, 13, 18, 0.4), transparent);
+    }
+    h1 { font-size: 3.2rem; color: var(--text-gold); font-family: 'Times New Roman', Times, serif, 'Segoe UI'; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.8); }
+    header p { color: #7d8496; margin: 12px 0 0 0; font-size: 1.2rem; }
+
+    .terminal { max-width: 900px; margin: 30px auto; background: #070913; padding: 20px; border: 1px solid #141a29; border-radius: 4px; font-family: 'Courier New', monospace; color: #39ff14; box-shadow: 0 20px 45px rgba(0,0,0,0.6); min-height: 120px; line-height: 1.6; direction: ltr; text-align: left; }
+
+    .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+    .stat { background: rgba(17, 22, 32, 0.5); backdrop-filter: blur(8px); padding: 25px 20px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: transform 0.3s, border-color 0.3s; }
+    .stat:hover { transform: translateY(-3px); border-color: rgba(197, 168, 128, 0.4); }
+    .stat h2 { margin: 0; font-size: 2.4rem; color: var(--text-gold); font-family: monospace; }
+    .stat p { margin: 6px 0 0 0; font-size: 0.85rem; color: #626978; font-weight: bold; text-transform: uppercase; }
+
+    .filter { text-align: center; padding: 20px 0; }
+    #search { padding: 12px 20px; width: 340px; background: #0d1117; border: 1px solid #232d38; border-radius: 4px; color: white; font-size: 0.95rem; text-align: center; outline: none; transition: all 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    #search:focus { border-color: var(--gold); box-shadow: 0 0 15px var(--gold-glow); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; max-width: 1200px; margin: auto; padding: 20px; }
+    
+    /* هندسة الكروت التفاعلية بنظام التوهج التتابعي */
+    .card { 
+        background: var(--card-bg); backdrop-filter: blur(12px); padding: 32px 28px; border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); 
+        position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+        opacity: 0; transform: translateY(20px); transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+    .card.revealed { opacity: 1; transform: translateY(0); }
+    .card:hover { transform: translateY(-6px); border-color: rgba(197, 168, 128, 0.4); box-shadow: 0 30px 55px rgba(0, 0, 0, 0.8); }
+
+    /* ميكانيكية ملاحقة الماوس بالضوء */
+    .card .glow-tracker {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: radial-gradient(600px circle at var(--x, 0px) var(--y, 0px), rgba(197, 168, 128, 0.07), transparent 40%);
+        pointer-events: none; z-index: 1;
+    }
+    .card-inner { position: relative; z-index: 2; }
+
+    .card h3 { margin: 0 0 10px 0; color: var(--text-gold); font-size: 1.5rem; letter-spacing: 0.5px; }
+    
+    .system-badge { font-size: 0.75rem; color: var(--gold); font-family: monospace; border-bottom: 1px solid rgba(197, 168, 128, 0.12); padding-bottom: 12px; margin-bottom: 18px; display: block; }
+
+    .card p { margin: 0; color: #9299a8; font-size: 0.98rem; line-height: 1.65; min-height: 70px; }
+
+    .card-actions { display: flex; gap: 10px; margin-top: 25px; flex-direction: column; position: relative; z-index: 2; }
+    .btn-row { display: flex; gap: 10px; }
+    
+    .btn { 
+        flex: 1; text-align: center; background: linear-gradient(to bottom, #232b38, #131821); color: white; padding: 12px; border-radius: 2px; text-decoration: none; font-size: 0.85rem; font-weight: bold; border: 1px solid #313d52; cursor: pointer; transition: all 0.2s; 
+        position: relative; overflow: hidden;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--text-gold); }
+    
+    /* حركية لمعان الزجاج الذكية للأزرار الرئيسية */
+    .btn-main { background: linear-gradient(to bottom, #82633e, #4a3720); border-color: #947145; }
+    .btn-main::after {
+        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.12), transparent);
+        transform: skewX(-25deg); animation: shimmer 4.5s infinite linear;
+    }
+    @keyframes shimmer { 100% { left: 150%; } }
+    .btn-main:hover { border-color: var(--gold); box-shadow: 0 0 15px rgba(197, 168, 128, 0.25); }
+    
+    .btn-about { background: rgba(255,255,255,0.01); border-color: rgba(255,255,255,0.06); color: #727b8c; }
+    .btn-about:hover { border-color: rgba(255,255,255,0.15); color: #ffffff; }
+
+    /* موديول النوافذ السينمائية المنبثقة */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 4, 7, 0.96); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal.active { opacity: 1; pointer-events: auto; }
+    .modal-content { background: #11141d; border: 1px solid var(--gold); max-width: 750px; width: 90%; padding: 32px; border-radius: 4px; position: relative; box-shadow: 0 30px 70px rgba(0,0,0,0.9); transform: scale(0.96); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal.active .modal-content { transform: scale(1); }
+    .modal-close { position: absolute; top: 20px; left: 20px; background: none; border: none; color: var(--text-gold); font-size: 1.6rem; cursor: pointer; z-index: 10; }
+    
+    .modal-tabs { display: flex; gap: 10px; margin: 25px 0 15px 0; border-bottom: 1px solid rgba(197, 168, 128, 0.12); padding-bottom: 10px; }
+    .tab-btn { background: none; border: 1px solid transparent; color: #5d6575; padding: 8px 18px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: 0.2s; }
+    .tab-btn.active { border-color: var(--gold); color: var(--text-gold); background: rgba(197, 168, 128, 0.04); }
+    .media-container img, .media-container video { width: 100%; border-radius: 2px; border: 1px solid #1e2533; display: none; margin-top: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .media-container .active-media { display: block; }
+
+    .dev-form input, .dev-form textarea { width: 100%; padding: 11px; background: #070913; border: 1px solid #232d38; color: white; border-radius: 4px; margin-bottom: 12px; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; }
+    .code-box { background: #000; padding: 15px; border-radius: 4px; font-family: monospace; color: #39ff14; white-space: pre-wrap; overflow-x: auto; margin-top: 15px; display: none; text-align: left; direction: ltr; font-size: 0.85rem; }
+
+    .tech-title { text-align: center; margin-top: 75px; color: var(--text-gold); font-weight: normal; font-size: 1.8rem; }
+    .tech { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding: 25px 20px; max-width: 800px; margin: auto; }
+    .tech span { background: #0d1117; border: 1px solid #21262d; padding: 10px 18px; border-radius: 4px; font-family: monospace; color: #8b949e; transition: all 0.3s; }
+    .tech span:hover { border-color: var(--gold); color: white; box-shadow: 0 0 10px var(--gold-glow); transform: translateY(-2px); }
+
+    footer { text-align: center; padding: 60px 20px; color: #434956; border-top: 1px solid rgba(197, 168, 128, 0.08); margin-top: 90px; font-size: 0.9rem; }
+    .dev-trigger { background: none; border: 1px dashed #222; color: #333; padding: 8px 16px; cursor: pointer; border-radius: 4px; margin-top: 25px; transition: 0.3s; }
+    .dev-trigger:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div id="loader">
+    <h2>Loading Infrastructure Platforms...</h2>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <p id="pct">0%</p>
+</div>
+
+<header>
+    <h1>المهندس أحمد</h1>
+    <p>باقة الأنظمة البرمجية وحلول أتمتة الأعمال المستقرة داخل العراق</p>
+</header>
+
+<div class="terminal" id="terminal"></div>
+
+<section class="dashboard">
+    <div class="stat"><h2 id="c1">0</h2><p>الأنظمة الجاهزة</p></div>
+    <div class="stat"><h2 id="c2">0</h2><p>إجمالي العملاء</p></div>
+    <div class="stat"><h2 id="c3">0</h2><p>النسخ المفعلة</p></div>
+    <div class="stat"><h2 id="c4">0</h2><p>التحديثات السنوية</p></div>
+</section>
+
+<div class="filter">
+    <input id="search" placeholder="ابحث عن نظام برمجي محدد الحزمة...">
+</div>
+
+<!-- حاوية الأنظمة الديناميكية -->
+<section class="grid" id="systems"></section>
+
+<h2 class="tech-title">النواة التكنولوجية والبيئات المدعومة</h2>
+<div class="tech">
+    <span>Python</span><span>Django</span><span>PyQt6</span><span>SQLite</span><span>SQL Server</span><span>OpenCV</span><span>REST API</span>
+</div>
+
+<!-- Modal الزبائن الموحد -->
+<div id="programModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h2 id="modalTitle" style="color: var(--text-gold); margin: 0; font-weight: normal;"></h2>
+        <p id="modalDesc" style="font-size: 0.9rem; color: #6f7685; margin: 5px 0 0 0;"></p>
+        <div class="modal-tabs">
+            <button id="tabImgBtn" class="tab-btn active" onclick="switchTab('img')">📷 لقطات شاشة النظام</button>
+            <button id="tabVidBtn" class="tab-btn" onclick="switchTab('vid')">🎥 فيديو الشرح العملي</button>
+        </div>
+        <div class="media-container">
+            <img id="modalImg" src="" alt="واجهة النظام المختار">
+            <video id="modalVid" controls src=""></video>
+        </div>
+    </div>
+</div>
+
+<!-- Modal لوحة تحكم المطور الذكية -->
+<div id="devModal" class="modal" onclick="closeDevModal()">
+    <div class="modal-content dev-form" onclick="event.stopPropagation()" style="max-width:550px;">
+        <button class="modal-close" onclick="closeDevModal()">✕</button>
+        <h2 style="color: var(--gold); margin:0 0 25px 0; font-weight:normal;">⚙️ مصفوفة توليد الكود التلقائي</h2>
+        <input id="devId" placeholder="المعرف البرمجي بالإنكليزية (مثال: raseed)">
+        <input id="devTitle" placeholder="اسم النظام الجديد">
+        <textarea id="devDesc" placeholder="شرح تفصيلي للميزات البرمجية والتسويقية..." rows="3"></textarea>
+        <input id="devImg" placeholder="رابط صورة شاشة النظام">
+        <input id="devVid" placeholder="رابط فيديو الشرح والتشغيل (اختياري)">
+        <button class="btn" style="background:var(--gold); color:black; width:100%; margin-top:5px;" onclick="generateProgramCode()">حقن ومعاينة النظام فورا</button>
+        <div class="code-box" id="codeBox"></div>
+        <button class="btn" id="copyBtn" style="display:none; margin-top:12px; border-color:var(--gold);" onclick="copyGeneratedCode()">📋 نسخ كود الكائن الجاهز</button>
+    </div>
+</div>
+
+<footer>
+    © 2026 ENG AHMED // LOCAL SERVICES ENGINE OPERATIONAL <br>
+    <button class="dev-trigger" onclick="openDevModal()">⚙️ بوابة المطور (المهندس أحمد)</button>
+</footer>
+
+<script>
+// ===================================================
+// قاعدة البيانات الديناميكية (تحتوي على الأنظمة الستة كاملة ومحدثة)
+// ===================================================
+const myPrograms = [
+    {
+        id: "school",
+        title: "1- سمارت سكول (Smart School)",
+        desc: "النظام المركزي لإدارة المدارس الأهلية، الثانويات ورياض الأطفال محلياً (Offline). يتكفل بملفات شؤون الطلاب، حسابات الأقساط وجرد الديون، الغيابات، وطباعة الهويات الذكية.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Smart+School+Dashboard+v2.6",
+        vid: "https://www.w3schools.com/html/mov_bbb.mp4"
+    },
+    {
+        id: "raseed",
+        title: "2- نظام رصيد للحسابات والمخازن",
+        desc: "المنصة الحسابية المتكاملة لإدارة المبيعات والمشتريات وجرد المستودعات للمحلات التجارية والسوبرماركت. دعم الباركود وطباعة الوصولات الفورية وإصدار تقارير الأرباح اليومية.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Raseed+POS+System+v4.1",
+        vid: ""
+    },
+    {
+        id: "sajilni",
+        title: "3- نظام سجلني الذكي",
+        desc: "منظومة تتبع وإدارة حضور وانصراف الموظفين والطلاب بالاعتماد على تكنولوجيا الكارت الممغنط وأجهزة الـ RFID. تمنع التلاعب وتحسب ساعات العمل والتأخير آلياً.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Sajilni+RFID+Platform",
+        vid: ""
+    },
+    {
+        id: "sandooq",
+        title: "4- نظام صندوقي اللوجستي",
+        desc: "نظام متطور مخصص للمخازن، المطاعم وشركات الشحن لكتابة وتنظيم فواتير وطلبات الزبائن. يقوم بتوليد وطباعة الملصقات (Stickers) ولصقها على الصناديق لتفادي خلط الطلبيات وعمليات الشحن.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Sandooq+Sticker+Output",
+        vid: ""
+    },
+    {
+        id: "studio",
+        title: "5- Studio AI Pro",
+        desc: "البرنامج السبراني الاحترافي الموجه لأصحاب استوديوهات التصوير ومكاتب المعاملات الورقية والكي كارد. يعالج ويحسن جودة صور المستمسكات الرسمية ويضبط أبعادها لتطابق المواقع الحكومية الفورية بضغطة زر.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Studio+AI+Pro+Imaging",
+        vid: ""
+    },
+    {
+        id: "tamween",
+        title: "6- نظام الحصة التموينية",
+        desc: "نظام لوجستي مغلق مخصص لمراكز التوزيع ووكلاء المواد الغذائية لأرشفة وتنظيم البيانات العائلية وجرد الحصص الشهرية المستلمة، لضمان آلية توزيع دقيقة ومنع الأخطاء الحسابية الحركية.",
+        img: "https://via.placeholder.com/700x400/151922/c5a880?text=Tamween+Data+System+v1.2",
+        vid: ""
+    }
+];
+
+const systemsContainer = document.getElementById('systems');
+
+// دالة البناء التفاعلي للكروت مع تفعيل ملاحقة ضوء الماوس
+function renderPrograms() {
+    systemsContainer.innerHTML = '';
+    myPrograms.forEach((prog, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div class="glow-tracker"></div>
+            <div class="card-inner">
+                <h3>${prog.title}</h3>
+                <span class="system-badge">// ENGINE_STATUS: OPERATIONAL (LOCAL_PING: 0ms)</span>
+                <p>${prog.desc}</p>
+                <div class="card-actions">
+                    <button class="btn btn-about" onclick="openModal('${prog.id}')">حول البرنامج (الصور والفيديو)</button>
+                    <div class="btn-row">
+                        <a href="https://wa.me/9647718515137" class="btn btn-main">طلب نسخة تجريبية</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // ربط حدث حركة الماوس بالتوهج الداخلي للكارت
+        card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--x', `${e.clientX - rect.left}px`);
+            card.style.setProperty('--y', `${e.clientY - rect.top}px`);
+        });
+
+        systemsContainer.appendChild(card);
+        
+        // تأثير صعود الكروت المتتابع الأنيق
+        setTimeout(() => { card.classList.add('revealed'); }, 100 * index + 1200);
+    });
+    document.getElementById('c1').innerText = myPrograms.length;
+}
+renderPrograms();
+
+// موديول تفعيل بوابة المطور والمعاينة
+function openDevModal() { document.getElementById('devModal').classList.add('active'); }
+function closeDevModal() { document.getElementById('devModal').classList.remove('active'); }
+
+function generateProgramCode() {
+    const id = document.getElementById('devId').value.trim();
+    const title = document.getElementById('devTitle').value.trim();
+    const desc = document.getElementById('devDesc').value.trim();
+    const img = document.getElementById('devImg').value.trim();
+    const vid = document.getElementById('devVid').value.trim();
+
+    if(!id || !title || !desc || !img) { alert('يرجى ملء كافة المعطيات البرمجية الأساسية!'); return; }
+    
+    const newProg = { id, title, desc, img, vid };
+    myPrograms.push(newProg);
+    renderPrograms();
+
+    const jsonString = `{\n    id: "${id}",\n    title: "${title}",\n    desc: "${desc}",\n    img: "${img}",\n    vid: "${vid}"\n},`;
+    const box = document.getElementById('codeBox');
+    box.innerText = jsonString;
+    box.style.display = 'block';
+    document.getElementById('copyBtn').style.display = 'block';
+}
+
+function copyGeneratedCode() {
+    navigator.clipboard.writeText(document.getElementById('codeBox').innerText);
+    alert('تم الحفظ بالملقط السبراني! قم بلصقه الآن داخل مصفوفة الكود البرمجي البرمي.');
+}
+
+// سكريبت مشغل الـ Loader والنسب الرقمية الحية
+let p = 0; let fill = document.getElementById('fill'); let pct = document.getElementById('pct'); let loader = document.getElementById('loader');
+let t = setInterval(() => {
+    p += 4; fill.style.width = p + '%'; pct.innerText = p + '%';
+    if(p >= 100) { clearInterval(t); loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 600); }
+}, 40);
+
+// محاكاة محطة الأوامر التفاعلية (Terminal Script)
+const lines = ['>> Booting Network Matrix...','>> Establishing Security Keys Validation...','>> Injecting Local Database Adapters...','>> Synchronizing 6 Core Sub-systems...','>> Systems Status: SECURE AND STABLE.'];
+let lineIdx = 0; let charIdx = 0; const term = document.getElementById('terminal');
+function typeEffect() {
+    if (lineIdx < lines.length) {
+        if (charIdx < lines[lineIdx].length) { term.innerHTML += lines[lineIdx].charAt(charIdx); charIdx++; setTimeout(typeEffect, 20); }
+        else { term.innerHTML += '<br>'; lineIdx++; charIdx = 0; setTimeout(typeEffect, 250); }
+    }
+}
+setTimeout(typeEffect, 400);
+
+// تفعيل لوحات الجرد الرقمي المتصاعد
+function animate(id, target) {
+    let n = 0; let el = document.getElementById(id); let step = Math.ceil(target / 40);
+    let x = setInterval(() => { n += step; if(n >= target) { n = target; clearInterval(x); } el.innerText = n; }, 30);
+}
+setTimeout(() => { animate('c2', 184); animate('c3', 73); animate('c4', 216); }, 1200);
+
+// فلترة البحث الانسيابية الفورية للكروت
+search.addEventListener('input', e => {
+    const query = e.target.value.toLowerCase();
+    document.querySelectorAll('.card').forEach(c => {
+        const match = c.innerText.toLowerCase().includes(query);
+        c.style.opacity = match ? '1' : '0';
+        c.style.transform = match ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.96)';
+        setTimeout(() => { c.style.display = match ? 'flex' : 'none'; }, match ? 10 : 300);
+    });
+});
+
+// موديول النوافذ المنبثقة التبويبية للزبائن
+function openModal(progId) {
+    const data = myPrograms.find(p => p.id === progId);
+    if(!data) return;
+    document.getElementById('modalTitle').innerText = data.title;
+    document.getElementById('modalDesc').innerText = "بيئة استعراض ملفات ونواة " + data.title;
+    document.getElementById('modalImg').src = data.img;
+    document.getElementById('modalVid').src = data.vid || "";
+    document.getElementById('tabVidBtn').style.display = data.vid ? 'inline-block' : 'none';
+    switchTab('img');
+    document.getElementById('programModal').classList.add('active');
+}
+function closeModal() { document.getElementById('modalVid').pause(); document.getElementById('programModal').classList.remove('active'); }
+function switchTab(type) {
+    const imgEl = document.getElementById('modalImg'); const vidEl = document.getElementById('modalVid');
+    const imgBtn = document.getElementById('tabImgBtn'); const vidBtn = document.getElementById('tabVidBtn');
+    if(type === 'img') { imgEl.style.display = 'block'; vidEl.style.display = 'none'; imgBtn.classList.add('active'); vidBtn.classList.remove('active'); vidEl.pause(); }
+    else { vidEl.style.display = 'block'; imgEl.style.display = 'none'; vidBtn.classList.add('active'); imgBtn.classList.remove('active'); }
+}
+</script>
+</body>
+</html>
